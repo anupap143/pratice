@@ -59,13 +59,13 @@ pipeline {
 
                   sed -e "s|IMAGE_PLACEHOLDER|$IMAGE|" \
                       -e "s|VERSION_PLACEHOLDER|$BUILD_NUMBER|" \
-                      k8s/deployment.yaml | kubectl apply -f -
+                      deployment.yaml | kubectl apply -f -
 
                   # Only apply the Ingress if an nginx ingress controller is installed
                   if kubectl get ingressclass nginx >/dev/null 2>&1; then
-                    kubectl apply -f k8s/ingress.yaml
+                    kubectl apply -f ingress.yaml
                   else
-                    echo "No nginx IngressClass found, skipping k8s/ingress.yaml"
+                    echo "No nginx IngressClass found, skipping ingress.yaml"
                   fi
 
                   kubectl -n $NAMESPACE rollout status deployment/$APP --timeout=180s
