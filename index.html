@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>practice-app v{{ info.version }}</title>
+  <style>
+    :root {
+      --accent: {{ info.color }};
+      --bg: #eef2f5;
+      --panel: #ffffff;
+      --ink: #1c2733;
+      --muted: #5b6977;
+      --line: #d5dde4;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root { --bg: #131a21; --panel: #1b242d; --ink: #e6edf3; --muted: #97a6b4; --line: #2c3945; }
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; background: var(--bg); color: var(--ink);
+      font: 16px/1.5 system-ui, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    }
+    main { max-width: 760px; margin: 0 auto; padding: 48px 20px 64px; }
+    .message { font-size: 1.1rem; color: var(--muted); margin: 0 0 8px; }
+    h1 { font-size: clamp(1.6rem, 5vw, 2.6rem); line-height: 1.15; margin: 0 0 4px; word-break: break-all;
+         font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; font-weight: 600; }
+    .served { margin: 0 0 32px; color: var(--muted); }
+    .bar { height: 6px; background: var(--accent); border-radius: 3px; margin-bottom: 32px; width: 72px; }
+    dl { display: grid; grid-template-columns: max-content 1fr; gap: 10px 24px; margin: 0 0 40px;
+         background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 20px 24px; }
+    dt { color: var(--muted); }
+    dd { margin: 0; font-weight: 500; overflow-wrap: anywhere; }
+    h2 { font-size: 1.15rem; margin: 0 0 6px; }
+    .hint { color: var(--muted); margin: 0 0 16px; max-width: 60ch; }
+    button {
+      font: inherit; font-weight: 600; color: #fff; background: var(--accent);
+      border: 0; border-radius: 8px; padding: 10px 18px; cursor: pointer;
+    }
+    button:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; }
+    button[disabled] { opacity: .6; cursor: wait; }
+    .tally { list-style: none; padding: 0; margin: 20px 0 0; }
+    .tally li { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
+    .tally .name { font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; font-size: .9rem; min-width: 0; flex: 0 1 260px; overflow-wrap: anywhere; }
+    .tally .meter { height: 10px; background: var(--accent); border-radius: 5px; transition: width .25s ease; }
+    .tally .count { color: var(--muted); font-variant-numeric: tabular-nums; }
+    .error { color: #b42318; }
+    @media (prefers-reduced-motion: reduce) { .tally .meter { transition: none; } }
+  </style>
+</head>
+<body>
+<main>
+  <p class="message">{{ info.message }}</p>
+  <h1 id="pod">{{ info.pod }}</h1>
+  <p class="served">This pod answered your request.</p>
+  <div class="bar" aria-hidden="true"></div>
+
+  <dl>
+    <dt>Version</dt><dd>{{ info.version }}</dd>
+    <dt>Environment</dt><dd>{{ info.environment }}</dd>
+    <dt>Node</dt><dd>{{ info.node }}</dd>
+    <dt>Pod IP</dt><dd>{{ info.pod_ip }}</dd>
+    <dt>Python</dt><dd>{{ info.python }}</dd>
+    <dt>Uptime</dt><dd>{{ info.uptime_seconds }} s</dd>
+    <dt>Requests served by this pod</dt><dd>{{ info.requests_served }}</dd>
+  </dl>
+
+  <h2>Which pod answers?</h2>
+  <p class="hint">Send 20 requests and see how the Service spreads them across pods.
+    Through an Ingress you'll see several pods; through <code>kubectl port-forward</code> you'll see only one,
+    because port-forward connects to a single pod.</p>
+  <button id="ask" type="button">Send 20 requests</button>
+  <ul class="tally" id="tally" aria-live="polite"></ul>
+</main>
+
+<script>
+  const counts = {};
+  const tally = document.getElementById("tally");
+  const btn = document.getElementById("ask");
+
+  function render() {
+    const max = Math.max(...Object.values(counts), 1);
+    tally.innerHTML = "";
+    for (const [pod, n] of Object.entries(counts).sort((a, b) => b[1] - a[1])) {
+      const li = document.createElement("li");
+      li.innerHTML = '<span class="name"></span><span class="meter"></span><span class="count"></span>';
+      li.querySelector(".name").textContent = pod;
+      li.querySelector(".meter").style.width = (n / max * 160) + "px";
+      li.querySelector(".count").textContent = n;
+      tally.appendChild(li);
+    }
+  }
+
+  btn.addEventListener("click", async () => {
+    btn.disabled = true;
+    try {
+      for (let i = 0; i < 20; i++) {
+        const res = await fetch("/api/info", { cache: "no-store" });
+        if (!res.ok) throw new Error("HTTP " + res.status);
+        const data = await res.json();
+        counts[data.pod] = (counts[data.pod] || 0) + 1;
+        render();
+      }
+    } catch (e) {
+      const li = document.createElement("li");
+      li.className = "error";
+      li.textContent = "Request failed (" + e.message + "). Check that the pods are running: kubectl -n practice get pods";
+      tally.appendChild(li);
+    } finally {
+      btn.disabled = false;
+    }
+  });
+</script>
+</body>
+</html>
