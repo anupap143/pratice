@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: practice-app
+  namespace: practice
+spec:
+  selector:
+    app: practice-app
+  ports:
+    - name: http
+      port: 80
+      targetPort: http

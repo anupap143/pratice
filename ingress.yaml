@@ -1,0 +1,19 @@
+# Optional. Needs the ingress-nginx controller (see README, "Option B").
+# Then the app is at http://172.16.30.124/ (if port 80 is reachable from your PC).
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: practice-app
+  namespace: practice
+spec:
+  ingressClassName: nginx
+  rules:
+    - http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: practice-app
+                port:
+                  name: http

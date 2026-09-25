@@ -1,0 +1,10 @@
+# Change these values, push, and rebuild in Jenkins to see them on the page.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: practice-app-config
+  namespace: practice
+data:
+  APP_MESSAGE: "Hello from practice-app, deployed by Jenkins!"
+  APP_COLOR: "#0f766e"        # must be #RRGGBB
+  APP_ENV: "lab"
