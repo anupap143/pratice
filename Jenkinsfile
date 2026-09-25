@@ -54,8 +54,8 @@ pipeline {
         stage('Deploy') {
             steps {
                 sh '''
-                  kubectl apply -f k8s/namespace.yaml
-                  kubectl apply -f k8s/configmap.yaml -f k8s/service.yaml
+                  kubectl apply -f namespace.yaml
+                  kubectl apply -f configmap.yaml -f service.yaml
 
                   sed -e "s|IMAGE_PLACEHOLDER|$IMAGE|" \
                       -e "s|VERSION_PLACEHOLDER|$BUILD_NUMBER|" \
